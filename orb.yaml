@@ -92,9 +92,6 @@ commands:
       app-name:
         description: "Application being updated."
         type: string
-      app-tag:
-        description: "Updated tag version."
-        type: string
       gitops-repo:
         description: "URL for repository containing kubernetes manifests."
         type: string
@@ -148,8 +145,10 @@ commands:
           name: Update image tag
           command: |
             cd /tmp/gitops
-            ls
-            yq e -i '.spec.source.helm.values |= (from_yaml | ((.. | select(has("tag") and .name=="<< parameters.app-name >>").tag) = "<< parameters.app-tag >>") | to_yaml)' << parameters.file-path >>
+            source /tmp/workspace/.vars
+            echo $APP_TAG
+            git checkout << parameters.gitops-deploy-branch >>
+            yq e -i '.spec.source.helm.values |= (from_yaml | ((.. | select(has("tag") and .name=="<< parameters.app-name >>").tag) = env(APP_TAG)) | to_yaml)' << parameters.file-path >>
 
       - run:
           name: Commit and push changes
@@ -161,6 +160,6 @@ commands:
             if [ -z "$(git status --porcelain)" ]; then
               echo "No changes detected."
             else
-              git commit -m "Updating << parameters.file-path >> app << parameters.app-name >> to tag << parameters.app-tag >>"
+              git commit -m "Updating << parameters.file-path >> app << parameters.app-name >> to tag $APP_TAG"
               git push origin << parameters.gitops-deploy-branch >>
             fi
