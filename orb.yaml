@@ -146,9 +146,8 @@ commands:
           command: |
             cd /tmp/gitops
             source /tmp/workspace/.vars
-            echo $APP_TAG
             git checkout << parameters.gitops-deploy-branch >>
-            yq e -i '.spec.source.helm.values |= (from_yaml | ((.. | select(has("tag") and .name=="<< parameters.app-name >>").tag) = env(APP_TAG)) | to_yaml)' << parameters.file-path >>
+            yq e -i '.spec.source.helm.values |= (from_yaml | ((.. | select(has("tag") and .name=="<< parameters.app-name >>").tag) = env(APP_TAG) + "@" + env(APP_SHA)) | to_yaml)' << parameters.file-path >>
 
       - run:
           name: Commit and push changes
